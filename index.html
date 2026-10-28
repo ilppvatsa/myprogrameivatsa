@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Subtitle Share Player</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #38bdf8;
+            --border-color: #334155;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 850px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 1.4rem;
+            color: var(--accent-color);
+            margin: 0;
+        }
+        .player-card {
+            background-color: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+        .player-wrapper {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 */
+            background-color: #000;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        #youtube-player {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            border: none;
+        }
+        #subtitle-overlay {
+            position: absolute;
+            bottom: 35px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #ffffff;
+            text-shadow: 2px 2px 4px #000, -2px -2px 4px #000, 2px -2px 4px #000, -2px 2px 4px #000;
+            pointer-events: none;
+            z-index: 10;
+            line-height: 1.4;
+        }
+        .file-box {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: #0f172a;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        label { font-size: 0.9rem; color: #94a3b8; }
+        input[type="file"] { color: #f8fafc; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎬 YouTube Custom Subtitle Viewer</h1>
+    
+    <div class="player-card">
+        <div class="player-wrapper">
+            <!-- 📌 เปลี่ยนตรง ID ข้างหลัง /embed/ เป็น Video ID ของยูทูปที่คุณทำซับ -->
+            <iframe id="youtube-player" src="https://www.youtube.com/embed/dQw4w9WgXcQ?enablejsapi=1" allowfullscreen></iframe>
+            <div id="subtitle-overlay"></div>
+        </div>
+
+        <div class="file-box">
+            <label for="srt-file">📂 อัปโหลดไฟล์ซับ (.srt) ของคุณเพื่อให้ซิงค์กับวิดีโอนี้:</label>
+            <input type="file" id="srt-file" accept=".srt">
+        </div>
+    </div>
+</div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+    let player;
+    let subtitles = [];
+
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('youtube-player', {
+            events: {
+                'onReady': () => {
+                    setInterval(updateSubtitles, 100);
+                }
+            }
+        });
+    }
+
+    // อ่านไฟล์ SRT
+    document.getElementById('srt-file').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            subtitles = parseSRT(evt.target.result);
+            alert(`โหลดซับสำเร็จ ${subtitles.length} บรรทัด! กดเล่นวิดีโอได้เลย`);
+        };
+        reader.readAsText(file, 'UTF-8');
+    });
+
+    function parseTime(timeStr) {
+        const parts = timeStr.split(':');
+        const secParts = parts[2].split(',');
+        return parseInt(parts[0])*3600 + parseInt(parts[1])*60 + parseInt(secParts[0]) + parseInt(secParts[1])/1000;
+    }
+
+    function parseSRT(data) {
+        const blocks = data.replace(/\r/g, '').split('\n\n');
+        let parsed = [];
+        blocks.forEach(block => {
+            const lines = block.split('\n');
+            if (lines.length >= 3) {
+                const timeLine = lines[1];
+                if (timeLine && timeLine.includes('-->')) {
+                    const times = timeLine.split('-->');
+                    parsed.push({
+                        start: parseTime(times[0].trim()),
+                        end: parseTime(times[1].trim()),
+                        text: lines.slice(2).join('<br>')
+                    });
+                }
+            }
+        });
+        return parsed;
+    }
+
+    function updateSubtitles() {
+        if (!player || typeof player.getCurrentTime !== 'function') return;
+        if (subtitles.length === 0) return;
+
+        try {
+            const currentTime = player.getCurrentTime();
+            const currentSub = subtitles.find(sub => currentTime >= sub.start && currentTime <= sub.end);
+            document.getElementById('subtitle-overlay').innerHTML = currentSub ? currentSub.text : '';
+        } catch (e) {}
+    }
+</script>
+
+</body>
+</html>
