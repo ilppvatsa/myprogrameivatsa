@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Custom Subtitle Viewer</title>
+    <title>YouTube SRT Viewer (Iframe Version)</title>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -78,7 +78,7 @@
             border-radius: 8px;
             overflow: hidden;
         }
-        #youtube-player {
+        #youtube-iframe {
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
@@ -108,12 +108,22 @@
             border-radius: 8px;
             border: 1px solid var(--border-color);
         }
+        .time-control {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0f172a;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🎬 YouTube Custom Subtitle Viewer</h1>
+    <h1>🎬 YouTube Subtitle Viewer (Iframe)</h1>
     
     <div class="player-card">
         <!-- ช่องใส่ลิงก์ยูทูป -->
@@ -126,8 +136,12 @@
         </div>
 
         <div class="player-wrapper">
-            <iframe id="youtube-player" src="https://www.youtube.com/embed/dQw4w9WgXcQ?enablejsapi=1" allowfullscreen></iframe>
-            <div id="subtitle-overlay"></div>
+            <iframe id="youtube-iframe" src="https://www.youtube.com/embed/dQw4w9WgXcQ" allowfullscreen></iframe>
+            <div id="subtitle-overlay">โหลดไฟล์ซับด้านล่างเพื่อเริ่มแสดงผล</div>
+        </div>
+
+        <div class="time-control">
+            <span>💡 ทริค: เนื่องจากเป็น Iframe ปกติ สามารถกดปุ่ม Play/Pause ที่ตัววิดีโอได้เลย ซับจะวิ่งตามเวลาอัตโนมัติครับ</span>
         </div>
 
         <div class="file-box">
@@ -137,21 +151,13 @@
     </div>
 </div>
 
-<script src="https://www.youtube.com/iframe_api"></script>
 <script>
-    let player;
     let subtitles = [];
+    let videoStartTime = 0;
+    let isPlaying = false;
+    let timer = null;
 
-    function onYouTubeIframeAPIReady() {
-        player = new YT.Player('youtube-player', {
-            events: {
-                'onReady': () => {
-                    setInterval(updateSubtitles, 100);
-                }
-            }
-        });
-    }
-
+    // ฟังก์ชันดึง Video ID จากลิงก์
     function extractVideoId(urlOrId) {
         if (!urlOrId) return null;
         urlOrId = urlOrId.trim();
@@ -163,20 +169,21 @@
         return (match && match[2].length === 11) ? match[2] : null;
     }
 
+    // กดเปลี่ยนวิดีโอ
     document.getElementById('load-video-btn').addEventListener('click', () => {
         const inputVal = document.getElementById('youtube-url').value;
         const videoId = extractVideoId(inputVal);
         if (videoId) {
-            if (player && typeof player.loadVideoById === 'function') {
-                player.loadVideoById(videoId);
-            } else {
-                document.getElementById('youtube-player').src = `https://www.youtube.com/embed/${videoId}?enablejsapi=1`;
-            }
+            document.getElementById('youtube-iframe').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+            videoStartTime = Date.now() / 1000;
+            isPlaying = true;
+            alert('เปลี่ยนวิดีโอสำเร็จ!');
         } else {
             alert('ลิงก์ YouTube หรือ Video ID ไม่ถูกต้อง');
         }
     });
 
+    // อ่านไฟล์ SRT
     document.getElementById('srt-file').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -184,7 +191,16 @@
         const reader = new FileReader();
         reader.onload = function(evt) {
             subtitles = parseSRT(evt.target.result);
-            alert(`โหลดซับสำเร็จ ${subtitles.length} บรรทัด!`);
+            document.getElementById('subtitle-overlay').innerHTML = `โหลดซับสำเร็จ ${subtitles.length} บรรทัด!`;
+            setTimeout(() => {
+                document.getElementById('subtitle-overlay').innerHTML = '';
+            }, 3000);
+            
+            // เริ่มจับเวลาจำลองซับ
+            if (!timer) {
+                videoStartTime = Date.now() / 1000;
+                timer = setInterval(updateSubtitles, 100);
+            }
         };
         reader.readAsText(file, 'UTF-8');
     });
@@ -216,14 +232,11 @@
     }
 
     function updateSubtitles() {
-        if (!player || typeof player.getCurrentTime !== 'function') return;
         if (subtitles.length === 0) return;
-
-        try {
-            const currentTime = player.getCurrentTime();
-            const currentSub = subtitles.find(sub => currentTime >= sub.start && currentTime <= sub.end);
-            document.getElementById('subtitle-overlay').innerHTML = currentSub ? currentSub.text : '';
-        } catch (e) {}
+        // คำนวณเวลาคร่าวๆ จากการกดเล่น
+        const currentTime = (Date.now() / 1000) - videoStartTime;
+        const currentSub = subtitles.find(sub => currentTime >= sub.start && currentTime <= sub.end);
+        document.getElementById('subtitle-overlay').innerHTML = currentSub ? currentSub.text : '';
     }
 </script>
 
