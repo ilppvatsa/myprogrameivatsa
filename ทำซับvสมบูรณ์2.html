@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>SRT Editor Pro v8.4 - Master Fixed</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; background: #121212; color: #e0e0e0; }
+        .container { max-width: 1200px; margin: auto; background: #1e1e1e; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h2 { color: #bb86fc; margin-top: 0; }
+        .section-label { font-weight: bold; font-size: 1.1rem; margin-bottom: 10px; display: block; color: #03dac6; }
+        .controls { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; margin-bottom: 25px; background: #2c2c2c; padding: 20px; border-radius: 10px; }
+        .time-box-group { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+        .time-input { width: 65px; padding: 10px; background: #333; border: 1px solid #555; color: #03dac6; text-align: center; font-size: 1.3rem; border-radius: 5px; font-family: monospace; }
+        .time-label { font-size: 0.8rem; color: #888; text-align: center; display: block; }
+        .helper-group { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; margin-bottom: 15px; align-items: center; border-bottom: 1px dashed #444; padding-bottom: 10px; }
+        .helper-group label { font-size: 0.85rem; color: #bbb; width: 100%; margin-bottom: 3px; }
+        button { border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-sec { padding: 8px 12px; background: #444; color: #fff; font-size: 0.85rem; }
+        .btn-ms { padding: 6px 8px; background: #2e3b4e; color: #a5d6ff; font-size: 0.75rem; min-width: 42px; }
+        .btn-sync { background: #cf6679; color: white; padding: 15px; width: 100%; margin-bottom: 20px; border: 1px solid white; font-size: 1.1rem; }
+        .btn-add { background: #bb86fc; color: #000; width: 100%; font-size: 1.4rem; padding: 20px; margin-top: 10px; }
+        textarea { background: #333; color: #fff; border: 1px solid #444; padding: 15px; font-size: 1.2rem; border-radius: 8px; width: 100%; box-sizing: border-box; resize: vertical; }
+        .pos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .pos-btn { padding: 10px 5px; background: #3d3d3d; color: #fff; border: 2px solid transparent; font-size: 0.85rem; }
+        .pos-btn.active { border-color: #bb86fc; background: #503d6d; }
+        .btn-preview { background: #ff9800; color: #000; padding: 15px 25px; font-weight: bold; font-size: 1rem; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>🎬 SRT Editor Pro v8.4</h2>
+        <button class="btn-preview" onclick="openPreview()">📺 เปิดหน้าพรีวิววิดีโอ (Real-time)</button>
+    </div>
+    
+    <div style="background: #252525; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+        <span class="section-label">📂 โหลดไฟล์ซับเดิม (.srt):</span>
+        <input type="file" id="fileInput" accept=".srt">
+    </div>
+
+    <div class="controls">
+        <div>
+            <button class="btn-sync" onclick="syncTime()">🔄 ดึงเวลาจบล่าสุดมาเป็นเวลาเริ่ม (+100ms)</button>
+            
+            <div class="time-box-group">
+                <span style="width: 50px; color:#bb86fc;">เริ่ม:</span>
+                <div><span class="time-label">HH</span><input type="text" id="sH" class="time-input" value="00"></div> :
+                <div><span class="time-label">MM</span><input type="text" id="sM" class="time-input" value="00"></div> :
+                <div><span class="time-label">SS</span><input type="text" id="sS" class="time-input" value="00"></div> <span class="sep-char">.</span>
+                <div><span class="time-label">ms</span><input type="text" id="sMs" class="time-input" value="000" style="width: 80px;"></div>
+            </div>
+            <div class="helper-group">
+                <label>ปรับวินาที (เริ่ม):</label>
+                <button class="btn-sec" onclick="modTime('s', -5)">-5s</button>
+                <button class="btn-sec" onclick="modTime('s', -1)">-1s</button>
+                <button class="btn-sec" onclick="modTime('s', 1)">+1s</button>
+                <button class="btn-sec" onclick="modTime('s', 5)">+5s</button>
+                <label style="margin-top:5px;">มิลลิวินาที (เริ่ม):</label>
+                <button class="btn-ms" onclick="setMs('sMs','000')">000</button>
+                <button class="btn-ms" onclick="setMs('sMs','100')">100</button>
+                <button class="btn-ms" onclick="setMs('sMs','200')">200</button>
+                <button class="btn-ms" onclick="setMs('sMs','300')">300</button>
+                <button class="btn-ms" onclick="setMs('sMs','400')">400</button>
+                <button class="btn-ms" onclick="setMs('sMs','500')">500</button>
+                <button class="btn-ms" onclick="setMs('sMs','600')">600</button>
+                <button class="btn-ms" onclick="setMs('sMs','700')">700</button>
+                <button class="btn-ms" onclick="setMs('sMs','800')">800</button>
+                <button class="btn-ms" onclick="setMs('sMs','900')">900</button>
+            </div>
+
+            <div class="time-box-group">
+                <span style="width: 50px; color:#03dac6;">จบ:</span>
+                <div><span class="time-label">HH</span><input type="text" id="eH" class="time-input" value="00"></div> :
+                <div><span class="time-label">MM</span><input type="text" id="eM" class="time-input" value="00"></div> :
+                <div><span class="time-label">SS</span><input type="text" id="eS" class="time-input" value="00"></div> <span class="sep-char">.</span>
+                <div><span class="time-label">ms</span><input type="text" id="eMs" class="time-input" value="500" style="width: 80px;"></div>
+            </div>
+            <div class="helper-group">
+                <label>ปรับวินาที (จบ):</label>
+                <button class="btn-sec" onclick="modTime('e', -5)">-5s</button>
+                <button class="btn-sec" onclick="modTime('e', -3)">-3s</button>
+                <button class="btn-sec" onclick="modTime('e', -1)">-1s</button>
+                <button class="btn-sec" onclick="modTime('e', 1)">+1s</button>
+                <button class="btn-sec" onclick="modTime('e', 3)">+3s</button>
+                <button class="btn-sec" onclick="modTime('e', 5)">+5s</button>
+                <label style="margin-top:5px;">มิลลิวินาที (จบ):</label>
+                <button class="btn-ms" onclick="setMs('eMs','000')">000</button>
+                <button class="btn-ms" onclick="setMs('eMs','100')">100</button>
+                <button class="btn-ms" onclick="setMs('eMs','200')">200</button>
+                <button class="btn-ms" onclick="setMs('eMs','300')">300</button>
+                <button class="btn-ms" onclick="setMs('eMs','400')">400</button>
+                <button class="btn-ms" onclick="setMs('eMs','500')">500</button>
+                <button class="btn-ms" onclick="setMs('eMs','600')">600</button>
+                <button class="btn-ms" onclick="setMs('eMs','700')">700</button>
+                <button class="btn-ms" onclick="setMs('eMs','800')">800</button>
+                <button class="btn-ms" onclick="setMs('eMs','900')">900</button>
+            </div>
+
+            <textarea id="textInput" placeholder="พิมพ์ข้อความที่นี่..."></textarea>
+            <button class="btn-add" onclick="addSubtitle()">➕ บันทึกลงรายการ</button>
+        </div>
+
+        <div>
+            <span class="section-label">📍 ตำแหน่งซับ</span>
+            <div class="pos-grid">
+                <button class="pos-btn" onclick="setPos('{\\an7}', this)">บน-ซ้าย</button>
+                <button class="pos-btn" onclick="setPos('{\\an8}', this)">บน-กลาง</button>
+                <button class="pos-btn" onclick="setPos('{\\an9}', this)">บน-ขวา</button>
+                <button class="pos-btn" onclick="setPos('{\\an4}', this)">กลาง-ซ้าย</button>
+                <button class="pos-btn" onclick="setPos('{\\an5}', this)">กลาง-จอ</button>
+                <button class="pos-btn" onclick="setPos('{\\an6}', this)">กลาง-ขวา</button>
+                <button class="pos-btn" onclick="setPos('{\\an1}', this)">ล่าง-ซ้าย</button>
+                <button class="pos-btn" onclick="setPos('{\\an2}', this)">ล่าง-กลาง</button>
+                <button class="pos-btn" onclick="setPos('{\\an3}', this)">ล่าง-ขวา</button>
+                <button class="pos-btn" style="grid-column: span 3; background:#cf6679" onclick="clearPos()">❌ ไม่ระบุตำแหน่ง (Clean)</button>
+            </div>
+        </div>
+    </div>
+
+    <textarea id="finalContent" style="height: 350px;" oninput="updateLastTimeFromText(); syncToPreview();"></textarea>
+    <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+        <button style="background:#03dac6; color:#000; padding: 15px 40px; font-weight:bold;" onclick="downloadSRT()">💾 ดาวน์โหลดไฟล์ .srt</button>
+    </div>
+</div>
+
+<script>
+    let currentPos = ""; let subCount = 0; let lastEndTotalMs = 0; let msSeparator = ".";
+    let previewWindow = null;
+
+    function setPos(tag, btn) {
+        currentPos = tag;
+        document.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    function clearPos() {
+        currentPos = "";
+        document.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('active'));
+    }
+
+    function openPreview() {
+        const playerHtml = `
+            <html><head><meta charset="UTF-8"><title>Preview</title><style>
+                body { background: #121212; color: #fff; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; }
+                .player { width: 95%; max-width: 900px; text-align: center; }
+                video { width: 100%; background: #000; border: 1px solid #444; }
+                video::cue { background: rgba(0, 0, 0, 0.6); color: white; font-size: 18px; }
+                .tools { background: #222; padding: 20px; border-radius: 10px; margin-top: 10px; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; align-items: center; }
+                button { background: #444; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+                .jump-input { background: #333; color: #03dac6; border: 1px solid #555; padding: 10px; width: 60px; text-align: center; font-size: 1.1rem; border-radius: 5px; }
+                .time-display { color: #bb86fc; font-weight: bold; font-size: 1.2rem; min-width: 80px; }
+                label { font-size: 0.8rem; color: #888; }
+            </style></head><body>
+                <div class="player">
+                    <div style="margin-bottom:10px;">
+                        <input type="file" id="v" accept="video/mp4" style="width: auto;">
+                        <span id="st" style="color:#03dac6; font-size:14px; margin-left:10px;">เลือกไฟล์วิดีโอ .mp4 เพื่อเริ่ม</span>
+                    </div>
+                    <video id="vid" controls></video>
+                    <div class="tools">
+                        <button onclick="s(-5)">-5 วินาที</button>
+                        <button onclick="s(-1)">-1 วินาที</button>
+                        <span id="time" class="time-display">00:00:00</span>
+                        <button onclick="s(1)">+1 วินาที</button>
+                        <button onclick="s(5)">+5 วินาที</button>
+                        
+                        <div style="border-left: 1px solid #444; padding-left: 15px; display: flex; gap: 5px; align-items: center;">
+                            <div><label>ชม.</label><br><input type="text" id="jH" class="jump-input" value="00"></div> :
+                            <div><label>นาที</label><br><input type="text" id="jM" class="jump-input" value="00"></div> :
+                            <div><label>วินาที</label><br><input type="text" id="jS" class="jump-input" value="00"></div>
+                            <button style="background:#bb86fc; color:#000; margin-left: 10px; padding: 15px;" onclick="j()">ข้ามไปเวลานี้</button>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                    const v = document.getElementById('vid');
+                    v.ontimeupdate = () => {
+                        let h = Math.floor(v.currentTime / 3600);
+                        let m = Math.floor((v.currentTime % 3600) / 60);
+                        let s = Math.floor(v.currentTime % 60);
+                        document.getElementById('time').innerText = 
+                            h.toString().padStart(2,'0') + ":" + 
+                            m.toString().padStart(2,'0') + ":" + 
+                            s.toString().padStart(2,'0');
+                    };
+                    function s(x) { v.currentTime += x; }
+                    function j() {
+                        const h = parseInt(document.getElementById('jH').value) || 0;
+                        const m = parseInt(document.getElementById('jM').value) || 0;
+                        const s = parseInt(document.getElementById('jS').value) || 0;
+                        v.currentTime = (h * 3600) + (m * 60) + s;
+                    }
+                    document.getElementById('v').onchange = (e) => { 
+                        v.src = URL.createObjectURL(e.target.files[0]);
+                        document.getElementById('st').innerText = "เชื่อมต่อสำเร็จ!";
+                    };
+                    
+                    window.onmessage = (e) => {
+                        let rawText = e.data.trim();
+                        if (!rawText) return;
+
+                        // แปลงสัญลักษณ์บอกมิลลิวินาทีเป็นจุดตามมาตรฐาน WebVTT
+                        let converted = rawText.replace(/,/g, '.');
+                        
+                        // หั่นแต่ละซับออกเป็นบล็อก ๆ เพื่อประมวลผลตำแหน่ง
+                        let blocks = converted.split(/\\n\\n+/);
+                        let vttLines = ["WEBVTT", ""];
+
+                        blocks.forEach(block => {
+                            let lines = block.split('\\n');
+                            if (lines.length >= 3) {
+                                let id = lines[0];
+                                let timeRange = lines[1];
+                                // รวมข้อความซับที่เหลือเข้าด้วยกัน
+                                let textContent = lines.slice(2).join('\\n');
+
+                                // กำหนดค่า Default พิกัด (ล่าง-กลาง)
+                                let vttSettings = ""; 
+
+                                // ตรวจหาแท็กจัดหน้า SRT และแปลงเป็น WebVTT Settings
+                                const posMatch = textContent.match(/\\{\\\\an(\\d)\\}/);
+                                if (posMatch) {
+                                    let posNum = posMatch[1];
+                                    // ลบแท็กออกจากข้อความดิบเพื่อไม่ให้แสดงบนจอ
+                                    textContent = textContent.replace(/\\{\\\\an\\d\\}/g, '');
+
+                                    // Mapping ตำแหน่ง SRT (an1-an9) ไปเป็น WebVTT Settings
+                                    switch(posNum) {
+                                        case '1': vttSettings = " align:left line:90%"; break;
+                                        case '2': vttSettings = " align:center line:90%"; break;
+                                        case '3': vttSettings = " align:right line:90%"; break;
+                                        case '4': vttSettings = " align:left line:50%"; break;
+                                        case '5': vttSettings = " align:center line:50%"; break;
+                                        case '6': vttSettings = " align:right line:50%"; break;
+                                        case '7': vttSettings = " align:left line:10%"; break;
+                                        case '8': vttSettings = " align:center line:10%"; break;
+                                        case '9': vttSettings = " align:right line:10%"; break;
+                                    }
+                                }
+
+                                vttLines.push(id);
+                                vttLines.push(timeRange + vttSettings);
+                                vttLines.push(textContent);
+                                vttLines.push("");
+                            }
+                        });
+
+                        if (window.t) v.removeChild(window.t);
+                        window.t = document.createElement('track');
+                        window.t.kind = "captions"; window.t.default = true;
+                        window.t.src = URL.createObjectURL(new Blob([vttLines.join('\\n')], {type:'text/vtt'}));
+                        v.appendChild(window.t);
+                    };
+                <\/script>
+            </body></html>`;
+        const blob = new Blob([playerHtml], { type: 'text/html' });
+        previewWindow = window.open(URL.createObjectURL(blob), 'SubPreview', 'width=1000,height=850');
+    }
+
+    function syncToPreview() {
+        if (previewWindow && !previewWindow.closed) {
+            previewWindow.postMessage(document.getElementById('finalContent').value, "*");
+        }
+    }
+
+    // --- Logic Functions ---
+    function timeToMs(h, m, s, ms) { return (parseInt(h) * 3600000) + (parseInt(m) * 60000) + (parseInt(s) * 1000) + parseInt(ms); }
+    
+    function msToTime(totalMs) {
+        if (totalMs < 0) totalMs = 0;
+        let h = Math.floor(totalMs / 3600000); totalMs %= 3600000;
+        let m = Math.floor(totalMs / 60000); totalMs %= 60000;
+        let s = Math.floor(totalMs / 1000); let ms = totalMs % 1000;
+        return { h: String(h).padStart(2, '0'), m: String(m).padStart(2, '0'), s: String(s).padStart(2, '0'), ms: String(ms).padStart(3, '0') };
+    }
+
+    function modTime(prefix, val) {
+        let target = (prefix === 's') ? 's' : 'e';
+        let h = document.getElementById(target+'H').value;
+        let m = document.getElementById(target+'M').value;
+        let s = document.getElementById(target+'S').value;
+        let ms = document.getElementById(target+'Ms').value;
+        let n = msToTime(timeToMs(h, m, s, ms) + (val * 1000));
+        document.getElementById(target+'H').value = n.h;
+        document.getElementById(target+'M').value = n.m;
+        document.getElementById(target+'S').value = n.s;
+    }
+
+    function setMs(id, val) { document.getElementById(id).value = val; }
+
+    function updateLastTimeFromText() {
+        const content = document.getElementById('finalContent').value.trim();
+        const timeMatches = content.match(/(\d{2}:\d{2}:\d{2}[,. ]\d{3})/g);
+        if (timeMatches) {
+            const lastTimeStr = timeMatches[timeMatches.length - 1]; 
+            msSeparator = lastTimeStr.includes(",") ? "," : ".";
+            document.querySelectorAll('.sep-char').forEach(el => el.innerText = msSeparator);
+            const parts = lastTimeStr.split(/[:., ]/);
+            lastEndTotalMs = timeToMs(parts[0], parts[1], parts[2], parts[3]);
+            const countMatches = content.match(/^\d+$/gm);
+            if(countMatches) subCount = Math.max(...countMatches.map(Number));
+        }
+    }
+
+    function syncTime() {
+        updateLastTimeFromText();
+        const t = msToTime(lastEndTotalMs + 100);
+        document.getElementById('sH').value = t.h; document.getElementById('sM').value = t.m; document.getElementById('sS').value = t.s; document.getElementById('sMs').value = t.ms;
+        const tEnd = msToTime(lastEndTotalMs + 3100);
+        document.getElementById('eH').value = tEnd.h; document.getElementById('eM').value = tEnd.m; document.getElementById('eS').value = tEnd.s; document.getElementById('eMs').value = "500";
+    }
+
+    function addSubtitle() {
+        const text = document.getElementById('textInput').value.trim();
+        if(!text) return;
+        subCount++;
+        const sh = document.getElementById('sH').value.padStart(2,'0'), sm = document.getElementById('sM').value.padStart(2,'0'), ss = document.getElementById('sS').value.padStart(2,'0'), sms = document.getElementById('sMs').value.padStart(3,'0');
+        const eh = document.getElementById('eH').value.padStart(2,'0'), em = document.getElementById('eM').value.padStart(2,'0'), es = document.getElementById('eS').value.padStart(2,'0'), ems = document.getElementById('eMs').value.padStart(3,'0');
+        const timeLine = `${sh}:${sm}:${ss}${msSeparator}${sms} --> ${eh}:${em}:${es}${msSeparator}${ems}`;
+        
+        const display = document.getElementById('finalContent');
+        const prefix = display.value.trim() === "" ? "" : "\n\n";
+        const entry = `${prefix}${subCount}\n${timeLine}\n${currentPos}${text}`;
+        
+        display.value += entry;
+        display.scrollTop = display.scrollHeight;
+        document.getElementById('textInput').value = "";
+        updateLastTimeFromText();
+        syncToPreview();
+    }
+
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+        const reader = new FileReader();
+        reader.onload = function(e) { document.getElementById('finalContent').value = e.target.result; updateLastTimeFromText(); syncToPreview(); };
+        reader.readAsText(e.target.files[0]);
+    });
+
+    function downloadSRT() {
+        const blob = new Blob([document.getElementById('finalContent').value], { type: 'text/plain;charset=utf-8' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'sub_edited.srt'; a.click();
+    }
+</script>
+</body>
+</html>
